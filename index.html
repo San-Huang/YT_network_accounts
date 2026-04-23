@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YouTube 矩阵账号数据看板</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f5f5f5; color: #1a1a1a; min-height: 100vh; padding: 24px 16px; }
+  .container { max-width: 900px; margin: 0 auto; }
+  h1 { font-size: 20px; font-weight: 600; color: #111; margin-bottom: 20px; }
+  .card { background: #fff; border-radius: 12px; border: 0.5px solid #e0e0e0; padding: 20px; margin-bottom: 16px; }
+  .metric-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+  .tab { font-size: 13px; padding: 5px 12px; border-radius: 20px; border: 0.5px solid #ccc; cursor: pointer; color: #555; background: #fff; transition: all .15s; }
+  .tab.active { background: #185FA5; color: #fff; border-color: #185FA5; font-weight: 500; }
+  .tab.active-gold { background: linear-gradient(135deg, #f5c842 0%, #e8a800 50%, #f5c842 100%); color: #5a3a00; border-color: #c8900a; font-weight: 500; box-shadow: 0 0 10px 2px #f5c84288, 0 0 22px 4px #e8a80044; }
+  .tab:hover:not(.active):not(.active-gold) { background: #f5f5f5; }
+  .legend { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 14px; }
+  .leg-item { font-size: 12px; font-weight: 500; padding: 3px 9px; border-radius: 5px; cursor: pointer; user-select: none; border: 1.5px solid transparent; transition: opacity .15s; }
+  .leg-item.muted { opacity: 0.3; }
+  .chart-wrap { position: relative; width: 100%; height: 340px; }
+  .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-top: 16px; }
+  .summary-card { background: #f7f7f7; border-radius: 8px; padding: 10px 12px; }
+  .summary-card.gold-card { background: linear-gradient(135deg, #fef9e7 0%, #fdf0b0 100%); border: 1px solid #e8c43a; }
+  .summary-card .acct { font-size: 11px; font-weight: 500; margin-bottom: 5px; }
+  .summary-card .acct.gold-acct { color: #7a5500; font-size: 12px; }
+  .summary-card .row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 2px; }
+  .summary-card .slabel { font-size: 10px; color: #888; }
+  .summary-card .slabel.gold-slabel { color: #8a6200; }
+  .summary-card .sval { font-size: 13px; font-weight: 500; color: #111; }
+  .summary-card .sval.gold-sval { font-size: 15px; font-weight: 500; color: #5a3a00; }
+  .insight-box { margin-top: 16px; border: 0.5px solid #e0e0e0; border-radius: 12px; padding: 14px 16px; background: #fff; }
+  .insight-label { font-size: 12px; font-weight: 500; color: #888; letter-spacing: 0.04em; margin-bottom: 10px; }
+  .insight-list { list-style: none; display: flex; flex-direction: column; gap: 7px; }
+  .insight-list li { font-size: 13px; color: #222; line-height: 1.65; padding-left: 14px; position: relative; }
+  .insight-list li::before { content: '·'; position: absolute; left: 0; color: #185FA5; font-size: 18px; line-height: 1.1; font-weight: 700; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>YouTube 矩阵账号数据看板</h1>
+  <div class="card">
+    <div class="metric-tabs" id="tabs"></div>
+    <div class="legend" id="legend"></div>
+    <div class="chart-wrap">
+      <canvas id="mainChart"></canvas>
+    </div>
+    <div class="summary-grid" id="summaries"></div>
+    <div class="insight-box">
+      <div class="insight-label">洞察</div>
+      <ul class="insight-list" id="insightList"></ul>
+    </div>
+  </div>
+</div>
+
+<script>
+const RAW = {"LittleDrama":[{"date":"2026-03-25","views":10023,"engaged":1834,"ctr":6.19,"avg_view_pct":14.55,"subscribers":75,"cpm":null,"revenue":0.68},{"date":"2026-03-27","views":10689,"engaged":953,"ctr":6.91,"avg_view_pct":12.81,"subscribers":11,"cpm":null,"revenue":0.557},{"date":"2026-03-28","views":26919,"engaged":2167,"ctr":8.49,"avg_view_pct":11.15,"subscribers":127,"cpm":null,"revenue":0.36},{"date":"2026-03-30","views":39853,"engaged":5544,"ctr":7.64,"avg_view_pct":17.64,"subscribers":115,"cpm":2.16,"revenue":29.016},{"date":"2026-03-31","views":47677,"engaged":5985,"ctr":6.36,"avg_view_pct":18.07,"subscribers":192,"cpm":null,"revenue":0.1},{"date":"2026-04-01","views":97877,"engaged":8701,"ctr":12.06,"avg_view_pct":13.92,"subscribers":187,"cpm":null,"revenue":0.023},{"date":"2026-04-02","views":4541,"engaged":357,"ctr":2.75,"avg_view_pct":9.81,"subscribers":17,"cpm":null,"revenue":0.188},{"date":"2026-04-03","views":80958,"engaged":10033,"ctr":6.49,"avg_view_pct":18.52,"subscribers":227,"cpm":null,"revenue":0.018},{"date":"2026-04-04","views":85740,"engaged":7289,"ctr":5.24,"avg_view_pct":12.24,"subscribers":153,"cpm":null,"revenue":0.004},{"date":"2026-04-05","views":183676,"engaged":13744,"ctr":6.54,"avg_view_pct":10.73,"subscribers":390,"cpm":1.23,"revenue":6.929},{"date":"2026-04-06","views":3225,"engaged":222,"ctr":4.06,"avg_view_pct":9.39,"subscribers":3,"cpm":null,"revenue":0.049},{"date":"2026-04-07","views":172,"engaged":8,"ctr":1.18,"avg_view_pct":6.77,"subscribers":0,"cpm":null,"revenue":0.0},{"date":"2026-04-08","views":3786,"engaged":367,"ctr":5.76,"avg_view_pct":12.86,"subscribers":34,"cpm":null,"revenue":0.164},{"date":"2026-04-09","views":6299,"engaged":588,"ctr":10.22,"avg_view_pct":10.88,"subscribers":9,"cpm":5.62,"revenue":2.083},{"date":"2026-04-10","views":14936,"engaged":1278,"ctr":12.85,"avg_view_pct":11.88,"subscribers":17,"cpm":null,"revenue":0.315},{"date":"2026-04-11","views":12604,"engaged":1145,"ctr":7.83,"avg_view_pct":11.89,"subscribers":22,"cpm":3.28,"revenue":12.166},{"date":"2026-04-12","views":4449,"engaged":468,"ctr":8.74,"avg_view_pct":14.61,"subscribers":8,"cpm":4.55,"revenue":2.93},{"date":"2026-04-13","views":4844,"engaged":556,"ctr":9.99,"avg_view_pct":18.12,"subscribers":12,"cpm":5.62,"revenue":2.878},{"date":"2026-04-14","views":1347,"engaged":134,"ctr":4.05,"avg_view_pct":14.53,"subscribers":4,"cpm":6.11,"revenue":1.381},{"date":"2026-04-15","views":2187,"engaged":180,"ctr":7.47,"avg_view_pct":10.53,"subscribers":5,"cpm":3.98,"revenue":1.192},{"date":"2026-04-17","views":25003,"engaged":2433,"ctr":8.13,"avg_view_pct":14.93,"subscribers":42,"cpm":2.55,"revenue":17.454},{"date":"2026-04-19","views":7280,"engaged":729,"ctr":9.47,"avg_view_pct":14.14,"subscribers":3,"cpm":3.26,"revenue":4.049},{"date":"2026-04-21","views":8525,"engaged":758,"ctr":8.11,"avg_view_pct":12.17,"subscribers":19,"cpm":2.28,"revenue":1.036}],"DramaBitesTV":[{"date":"2026-03-26","views":560,"engaged":41,"ctr":6.18,"avg_view_pct":9.39,"subscribers":2,"cpm":null,"revenue":0.057},{"date":"2026-03-27","views":3919,"engaged":293,"ctr":2.41,"avg_view_pct":10.07,"subscribers":13,"cpm":null,"revenue":0.596},{"date":"2026-03-28","views":5507,"engaged":481,"ctr":5.63,"avg_view_pct":12.1,"subscribers":28,"cpm":null,"revenue":0.599},{"date":"2026-03-29","views":69161,"engaged":6244,"ctr":10.41,"avg_view_pct":12.25,"subscribers":344,"cpm":1.74,"revenue":39.476},{"date":"2026-03-30","views":102913,"engaged":7489,"ctr":12.14,"avg_view_pct":9.91,"subscribers":804,"cpm":1.26,"revenue":41.961},{"date":"2026-03-31","views":78096,"engaged":9856,"ctr":7.94,"avg_view_pct":18.21,"subscribers":305,"cpm":1.61,"revenue":41.206},{"date":"2026-04-01","views":8922,"engaged":1253,"ctr":7.16,"avg_view_pct":20.01,"subscribers":19,"cpm":7.07,"revenue":21.574},{"date":"2026-04-02","views":44123,"engaged":5560,"ctr":6.75,"avg_view_pct":17.98,"subscribers":74,"cpm":1.12,"revenue":16.133},{"date":"2026-04-03","views":30494,"engaged":5122,"ctr":5.38,"avg_view_pct":24.04,"subscribers":159,"cpm":1.36,"revenue":13.619},{"date":"2026-04-04","views":16589,"engaged":1828,"ctr":8.0,"avg_view_pct":15.12,"subscribers":61,"cpm":null,"revenue":3.364},{"date":"2026-04-05","views":63018,"engaged":4871,"ctr":6.63,"avg_view_pct":11.47,"subscribers":137,"cpm":null,"revenue":5.59},{"date":"2026-04-06","views":25317,"engaged":1913,"ctr":8.1,"avg_view_pct":10.42,"subscribers":52,"cpm":null,"revenue":1.515},{"date":"2026-04-07","views":15503,"engaged":2619,"ctr":4.82,"avg_view_pct":23.98,"subscribers":27,"cpm":3.88,"revenue":19.684},{"date":"2026-04-08","views":17805,"engaged":2673,"ctr":6.23,"avg_view_pct":20.57,"subscribers":45,"cpm":5.35,"revenue":39.014},{"date":"2026-04-09","views":17843,"engaged":2351,"ctr":5.0,"avg_view_pct":18.54,"subscribers":48,"cpm":4.61,"revenue":26.961},{"date":"2026-04-10","views":603152,"engaged":81234,"ctr":5.34,"avg_view_pct":19.58,"subscribers":2227,"cpm":2.42,"revenue":488.118},{"date":"2026-04-11","views":36272,"engaged":3864,"ctr":13.16,"avg_view_pct":14.66,"subscribers":102,"cpm":1.37,"revenue":16.457},{"date":"2026-04-12","views":52126,"engaged":7608,"ctr":7.27,"avg_view_pct":20.17,"subscribers":123,"cpm":7.76,"revenue":133.209},{"date":"2026-04-13","views":34191,"engaged":5170,"ctr":5.94,"avg_view_pct":20.91,"subscribers":66,"cpm":5.66,"revenue":63.907},{"date":"2026-04-14","views":121683,"engaged":17428,"ctr":8.5,"avg_view_pct":19.86,"subscribers":467,"cpm":4.88,"revenue":197.24},{"date":"2026-04-15","views":11368,"engaged":981,"ctr":8.43,"avg_view_pct":11.76,"subscribers":39,"cpm":2.97,"revenue":11.062},{"date":"2026-04-16","views":31128,"engaged":3942,"ctr":7.19,"avg_view_pct":17.49,"subscribers":35,"cpm":4.04,"revenue":41.376},{"date":"2026-04-17","views":92326,"engaged":11886,"ctr":6.97,"avg_view_pct":17.78,"subscribers":212,"cpm":3.51,"revenue":106.289},{"date":"2026-04-18","views":12909,"engaged":1730,"ctr":7.24,"avg_view_pct":18.56,"subscribers":34,"cpm":5.61,"revenue":23.824},{"date":"2026-04-20","views":3146,"engaged":416,"ctr":4.72,"avg_view_pct":18.18,"subscribers":2,"cpm":2.97,"revenue":3.094},{"date":"2026-04-21","views":22519,"engaged":2421,"ctr":8.05,"avg_view_pct":14.86,"subscribers":38,"cpm":2.19,"revenue":16.285},{"date":"2026-04-22","views":1537,"engaged":118,"ctr":4.5,"avg_view_pct":10.64,"subscribers":2,"cpm":null,"revenue":0.0}],"Drama Club":[{"date":"2026-03-25","views":8260,"engaged":1335,"ctr":5.92,"avg_view_pct":22.84,"subscribers":33,"cpm":null,"revenue":0.027},{"date":"2026-03-30","views":687,"engaged":83,"ctr":3.55,"avg_view_pct":16.94,"subscribers":3,"cpm":null,"revenue":0.003},{"date":"2026-03-31","views":37339,"engaged":5106,"ctr":7.27,"avg_view_pct":18.98,"subscribers":118,"cpm":0.86,"revenue":10.464},{"date":"2026-04-01","views":10068,"engaged":943,"ctr":5.87,"avg_view_pct":12.53,"subscribers":101,"cpm":null,"revenue":0.015},{"date":"2026-04-04","views":921,"engaged":144,"ctr":4.59,"avg_view_pct":21.74,"subscribers":3,"cpm":null,"revenue":0.007},{"date":"2026-04-07","views":5426,"engaged":841,"ctr":3.72,"avg_view_pct":21.9,"subscribers":23,"cpm":null,"revenue":0.0},{"date":"2026-04-09","views":149007,"engaged":17483,"ctr":6.64,"avg_view_pct":16.06,"subscribers":491,"cpm":0.77,"revenue":37.156},{"date":"2026-04-10","views":850,"engaged":105,"ctr":2.99,"avg_view_pct":17.03,"subscribers":1,"cpm":null,"revenue":0.003},{"date":"2026-04-11","views":107182,"engaged":13800,"ctr":5.43,"avg_view_pct":17.85,"subscribers":556,"cpm":0.29,"revenue":10.33},{"date":"2026-04-12","views":24436,"engaged":2545,"ctr":10.66,"avg_view_pct":14.35,"subscribers":101,"cpm":0.46,"revenue":3.641},{"date":"2026-04-13","views":55323,"engaged":8646,"ctr":6.92,"avg_view_pct":21.77,"subscribers":226,"cpm":0.63,"revenue":11.587},{"date":"2026-04-14","views":61014,"engaged":9117,"ctr":11.31,"avg_view_pct":20.63,"subscribers":276,"cpm":0.18,"revenue":3.545},{"date":"2026-04-15","views":89372,"engaged":15447,"ctr":8.3,"avg_view_pct":24.36,"subscribers":275,"cpm":1.34,"revenue":39.122},{"date":"2026-04-16","views":14526,"engaged":2267,"ctr":7.95,"avg_view_pct":21.81,"subscribers":35,"cpm":0.55,"revenue":2.587},{"date":"2026-04-17","views":9307,"engaged":1530,"ctr":6.87,"avg_view_pct":22.86,"subscribers":16,"cpm":1.38,"revenue":4.198},{"date":"2026-04-19","views":61947,"engaged":7634,"ctr":7.64,"avg_view_pct":16.98,"subscribers":168,"cpm":0.7,"revenue":14.206},{"date":"2026-04-20","views":3497,"engaged":309,"ctr":8.14,"avg_view_pct":12.28,"subscribers":6,"cpm":null,"revenue":0.0},{"date":"2026-04-21","views":10188,"engaged":1107,"ctr":8.75,"avg_view_pct":14.97,"subscribers":22,"cpm":1.24,"revenue":4.146},{"date":"2026-04-22","views":12438,"engaged":1012,"ctr":8.73,"avg_view_pct":11.31,"subscribers":23,"cpm":null,"revenue":0.0}],"CEO Love Drama":[{"date":"2026-03-24","views":11295,"engaged":3005,"ctr":1.22,"avg_view_pct":76.74,"subscribers":40,"cpm":null,"revenue":0.031},{"date":"2026-03-25","views":5629,"engaged":1348,"ctr":2.02,"avg_view_pct":60.76,"subscribers":11,"cpm":null,"revenue":0.026},{"date":"2026-03-26","views":19426,"engaged":1805,"ctr":6.02,"avg_view_pct":12.58,"subscribers":46,"cpm":null,"revenue":0.506},{"date":"2026-03-27","views":37810,"engaged":3971,"ctr":6.95,"avg_view_pct":14.41,"subscribers":86,"cpm":null,"revenue":1.868},{"date":"2026-03-28","views":33345,"engaged":5082,"ctr":8.68,"avg_view_pct":21.06,"subscribers":86,"cpm":1.35,"revenue":7.447},{"date":"2026-03-29","views":105670,"engaged":9816,"ctr":12.08,"avg_view_pct":12.81,"subscribers":506,"cpm":1.43,"revenue":49.183},{"date":"2026-03-30","views":706289,"engaged":72345,"ctr":8.73,"avg_view_pct":14.1,"subscribers":1570,"cpm":0.62,"revenue":141.609},{"date":"2026-03-31","views":878154,"engaged":88102,"ctr":9.06,"avg_view_pct":13.91,"subscribers":1579,"cpm":0.34,"revenue":95.084},{"date":"2026-04-01","views":5686,"engaged":789,"ctr":6.54,"avg_view_pct":19.48,"subscribers":13,"cpm":3.61,"revenue":3.43},{"date":"2026-04-02","views":36053,"engaged":3671,"ctr":7.75,"avg_view_pct":14.01,"subscribers":102,"cpm":null,"revenue":0.016},{"date":"2026-04-03","views":463205,"engaged":51878,"ctr":7.2,"avg_view_pct":15.36,"subscribers":1566,"cpm":1.21,"revenue":183.151},{"date":"2026-04-04","views":6356,"engaged":1545,"ctr":3.62,"avg_view_pct":33.71,"subscribers":8,"cpm":9.28,"revenue":19.217},{"date":"2026-04-05","views":3916,"engaged":327,"ctr":7.47,"avg_view_pct":11.44,"subscribers":4,"cpm":null,"revenue":1.622},{"date":"2026-04-07","views":69354,"engaged":13147,"ctr":6.32,"avg_view_pct":26.11,"subscribers":202,"cpm":4.68,"revenue":106.574},{"date":"2026-04-09","views":6340,"engaged":1512,"ctr":2.04,"avg_view_pct":75.67,"subscribers":9,"cpm":null,"revenue":0.533},{"date":"2026-04-10","views":1489,"engaged":315,"ctr":3.6,"avg_view_pct":51.85,"subscribers":0,"cpm":null,"revenue":0.08},{"date":"2026-04-11","views":2690,"engaged":629,"ctr":2.47,"avg_view_pct":55.15,"subscribers":7,"cpm":null,"revenue":0.227},{"date":"2026-04-12","views":17807,"engaged":5286,"ctr":8.88,"avg_view_pct":74.11,"subscribers":120,"cpm":null,"revenue":1.27},{"date":"2026-04-13","views":1423,"engaged":312,"ctr":4.53,"avg_view_pct":50.63,"subscribers":9,"cpm":null,"revenue":0.089},{"date":"2026-04-14","views":251,"engaged":42,"ctr":2.21,"avg_view_pct":41.75,"subscribers":1,"cpm":null,"revenue":0.016},{"date":"2026-04-15","views":3177,"engaged":661,"ctr":7.28,"avg_view_pct":65.9,"subscribers":2,"cpm":null,"revenue":0.281}],"Drama Nook":[{"date":"2026-03-14","views":86665,"engaged":8541,"ctr":3.54,"avg_view_pct":13.76,"subscribers":315,"cpm":0.94,"revenue":26.33},{"date":"2026-03-15","views":21055,"engaged":1609,"ctr":3.42,"avg_view_pct":10.57,"subscribers":43,"cpm":1.77,"revenue":12.725},{"date":"2026-03-16","views":6371,"engaged":1123,"ctr":6.88,"avg_view_pct":25.01,"subscribers":13,"cpm":null,"revenue":0.468},{"date":"2026-03-17","views":202299,"engaged":27655,"ctr":5.4,"avg_view_pct":19.11,"subscribers":596,"cpm":0.87,"revenue":57.714},{"date":"2026-03-18","views":2047340,"engaged":261452,"ctr":5.59,"avg_view_pct":17.6,"subscribers":5186,"cpm":0.28,"revenue":184.569},{"date":"2026-03-19","views":153879,"engaged":17542,"ctr":5.65,"avg_view_pct":15.74,"subscribers":385,"cpm":2.12,"revenue":116.302},{"date":"2026-03-20","views":2143,"engaged":365,"ctr":3.03,"avg_view_pct":23.98,"subscribers":4,"cpm":null,"revenue":0.586},{"date":"2026-03-21","views":104781,"engaged":13286,"ctr":13.71,"avg_view_pct":17.54,"subscribers":660,"cpm":2.21,"revenue":76.095},{"date":"2026-03-22","views":46897,"engaged":7721,"ctr":10.47,"avg_view_pct":23.04,"subscribers":80,"cpm":1.24,"revenue":18.949},{"date":"2026-03-23","views":255215,"engaged":28163,"ctr":8.1,"avg_view_pct":15.46,"subscribers":667,"cpm":2.18,"revenue":180.692},{"date":"2026-03-24","views":3747,"engaged":406,"ctr":3.74,"avg_view_pct":14.82,"subscribers":8,"cpm":1.52,"revenue":1.881},{"date":"2026-03-25","views":2426,"engaged":357,"ctr":3.84,"avg_view_pct":20.57,"subscribers":4,"cpm":2.09,"revenue":2.53},{"date":"2026-03-26","views":435264,"engaged":43891,"ctr":10.99,"avg_view_pct":13.89,"subscribers":1448,"cpm":0.91,"revenue":128.376},{"date":"2026-03-27","views":1824,"engaged":224,"ctr":3.13,"avg_view_pct":17.2,"subscribers":1,"cpm":3.69,"revenue":2.231},{"date":"2026-03-28","views":185588,"engaged":19891,"ctr":9.16,"avg_view_pct":14.78,"subscribers":327,"cpm":0.85,"revenue":51.039},{"date":"2026-03-29","views":17456,"engaged":2337,"ctr":8.16,"avg_view_pct":18.84,"subscribers":38,"cpm":3.46,"revenue":19.996},{"date":"2026-03-30","views":1669,"engaged":228,"ctr":2.66,"avg_view_pct":19.27,"subscribers":1,"cpm":null,"revenue":0.564},{"date":"2026-03-31","views":44529,"engaged":4603,"ctr":7.49,"avg_view_pct":14.34,"subscribers":72,"cpm":2.02,"revenue":29.442},{"date":"2026-04-01","views":16976,"engaged":1456,"ctr":8.93,"avg_view_pct":11.8,"subscribers":39,"cpm":2.15,"revenue":11.983},{"date":"2026-04-02","views":7887,"engaged":1313,"ctr":5.25,"avg_view_pct":23.38,"subscribers":19,"cpm":3.28,"revenue":8.54},{"date":"2026-04-03","views":21339,"engaged":2714,"ctr":7.32,"avg_view_pct":17.63,"subscribers":45,"cpm":2.34,"revenue":16.471},{"date":"2026-04-04","views":12989,"engaged":2026,"ctr":5.46,"avg_view_pct":21.83,"subscribers":68,"cpm":3.58,"revenue":15.322},{"date":"2026-04-05","views":70372,"engaged":10295,"ctr":7.19,"avg_view_pct":20.52,"subscribers":237,"cpm":2.94,"revenue":68.012},{"date":"2026-04-06","views":10850,"engaged":2023,"ctr":7.17,"avg_view_pct":26.19,"subscribers":26,"cpm":null,"revenue":0.697},{"date":"2026-04-07","views":24701,"engaged":3784,"ctr":7.39,"avg_view_pct":21.45,"subscribers":60,"cpm":3.58,"revenue":29.243},{"date":"2026-04-09","views":400682,"engaged":48811,"ctr":8.76,"avg_view_pct":16.81,"subscribers":980,"cpm":2.1,"revenue":276.195},{"date":"2026-04-10","views":37494,"engaged":4986,"ctr":6.38,"avg_view_pct":18.5,"subscribers":111,"cpm":1.17,"revenue":14.432},{"date":"2026-04-11","views":150429,"engaged":18036,"ctr":6.22,"avg_view_pct":16.63,"subscribers":370,"cpm":1.58,"revenue":78.348},{"date":"2026-04-12","views":8676,"engaged":940,"ctr":5.78,"avg_view_pct":14.86,"subscribers":9,"cpm":1.97,"revenue":5.639},{"date":"2026-04-13","views":2192,"engaged":204,"ctr":4.34,"avg_view_pct":12.77,"subscribers":0,"cpm":3.44,"revenue":2.49},{"date":"2026-04-14","views":77943,"engaged":9217,"ctr":7.9,"avg_view_pct":16.36,"subscribers":236,"cpm":3.37,"revenue":86.17},{"date":"2026-04-15","views":88844,"engaged":10564,"ctr":7.25,"avg_view_pct":16.4,"subscribers":131,"cpm":1.64,"revenue":47.78}],"Found This Drama":[{"date":"2026-02-05","views":839975,"engaged":87034,"ctr":8.36,"avg_view_pct":14.36,"subscribers":2677,"cpm":1.97,"revenue":555.551},{"date":"2026-02-25","views":335263,"engaged":37294,"ctr":19.72,"avg_view_pct":15.33,"subscribers":496,"cpm":2.59,"revenue":290.449},{"date":"2026-02-26","views":237967,"engaged":21908,"ctr":8.19,"avg_view_pct":12.89,"subscribers":371,"cpm":null,"revenue":15.861},{"date":"2026-03-04","views":578919,"engaged":75834,"ctr":9.28,"avg_view_pct":18.23,"subscribers":1808,"cpm":0.6,"revenue":105.261},{"date":"2026-03-06","views":293419,"engaged":49956,"ctr":12.5,"avg_view_pct":23.48,"subscribers":669,"cpm":1.47,"revenue":142.88},{"date":"2026-03-07","views":28673,"engaged":6603,"ctr":13.56,"avg_view_pct":32.43,"subscribers":41,"cpm":1.07,"revenue":10.001},{"date":"2026-03-08","views":5206,"engaged":605,"ctr":5.42,"avg_view_pct":16.29,"subscribers":5,"cpm":2.53,"revenue":4.404},{"date":"2026-03-10","views":1386495,"engaged":140432,"ctr":7.03,"avg_view_pct":14.03,"subscribers":4848,"cpm":1.25,"revenue":577.267},{"date":"2026-03-11","views":35110,"engaged":5194,"ctr":10.84,"avg_view_pct":20.66,"subscribers":94,"cpm":null,"revenue":2.95},{"date":"2026-03-14","views":50703,"engaged":3609,"ctr":24.36,"avg_view_pct":9.91,"subscribers":212,"cpm":null,"revenue":0.163},{"date":"2026-03-16","views":3445,"engaged":439,"ctr":1.96,"avg_view_pct":17.81,"subscribers":8,"cpm":3.18,"revenue":4.583},{"date":"2026-03-17","views":504911,"engaged":100043,"ctr":17.51,"avg_view_pct":27.75,"subscribers":2175,"cpm":2.19,"revenue":366.231},{"date":"2026-03-18","views":210514,"engaged":37926,"ctr":7.85,"avg_view_pct":25.25,"subscribers":455,"cpm":1.69,"revenue":118.496},{"date":"2026-03-20","views":959978,"engaged":137534,"ctr":8.78,"avg_view_pct":19.91,"subscribers":4323,"cpm":2.73,"revenue":874.102},{"date":"2026-03-22","views":222273,"engaged":46625,"ctr":13.04,"avg_view_pct":29.44,"subscribers":587,"cpm":1.27,"revenue":93.621},{"date":"2026-03-23","views":35733,"engaged":3095,"ctr":10.61,"avg_view_pct":11.91,"subscribers":131,"cpm":1.92,"revenue":22.858},{"date":"2026-03-24","views":86774,"engaged":7622,"ctr":9.55,"avg_view_pct":12.21,"subscribers":127,"cpm":1.19,"revenue":34.285},{"date":"2026-03-26","views":224431,"engaged":23521,"ctr":6.64,"avg_view_pct":14.61,"subscribers":383,"cpm":2.0,"revenue":149.339},{"date":"2026-03-27","views":41937,"engaged":4380,"ctr":8.69,"avg_view_pct":14.57,"subscribers":63,"cpm":2.95,"revenue":41.204},{"date":"2026-03-28","views":96773,"engaged":14261,"ctr":8.68,"avg_view_pct":20.63,"subscribers":163,"cpm":1.58,"revenue":50.676},{"date":"2026-03-29","views":60412,"engaged":4382,"ctr":7.36,"avg_view_pct":10.18,"subscribers":82,"cpm":1.1,"revenue":22.202},{"date":"2026-03-30","views":73933,"engaged":8586,"ctr":9.79,"avg_view_pct":16.2,"subscribers":135,"cpm":3.94,"revenue":96.719},{"date":"2026-04-03","views":11780,"engaged":1247,"ctr":5.69,"avg_view_pct":14.82,"subscribers":18,"cpm":0.95,"revenue":3.704},{"date":"2026-04-04","views":126322,"engaged":18349,"ctr":5.83,"avg_view_pct":20.24,"subscribers":172,"cpm":0.9,"revenue":37.732},{"date":"2026-04-05","views":2421,"engaged":261,"ctr":4.22,"avg_view_pct":14.92,"subscribers":1,"cpm":null,"revenue":0.027},{"date":"2026-04-07","views":64089,"engaged":9054,"ctr":7.26,"avg_view_pct":19.69,"subscribers":104,"cpm":2.35,"revenue":50.01},{"date":"2026-04-08","views":5372,"engaged":932,"ctr":6.7,"avg_view_pct":24.37,"subscribers":2,"cpm":1.2,"revenue":2.138}],"SceneClip":[{"date":"2026-03-25","views":113,"engaged":13,"ctr":0.39,"avg_view_pct":46.78,"subscribers":0,"cpm":null,"revenue":0.0},{"date":"2026-03-26","views":6664,"engaged":693,"ctr":4.09,"avg_view_pct":73.29,"subscribers":33,"cpm":null,"revenue":0.12},{"date":"2026-03-27","views":13008,"engaged":1186,"ctr":3.82,"avg_view_pct":50.92,"subscribers":20,"cpm":null,"revenue":0.244},{"date":"2026-03-28","views":14679,"engaged":521,"ctr":0.61,"avg_view_pct":124.39,"subscribers":11,"cpm":null,"revenue":0.004},{"date":"2026-03-30","views":12822,"engaged":1983,"ctr":6.54,"avg_view_pct":22.69,"subscribers":33,"cpm":null,"revenue":0.923},{"date":"2026-03-31","views":39580,"engaged":5487,"ctr":7.74,"avg_view_pct":19.33,"subscribers":100,"cpm":0.62,"revenue":8.063},{"date":"2026-04-01","views":79942,"engaged":10392,"ctr":9.05,"avg_view_pct":18.17,"subscribers":223,"cpm":null,"revenue":2.17},{"date":"2026-04-02","views":59859,"engaged":7141,"ctr":8.01,"avg_view_pct":16.72,"subscribers":132,"cpm":null,"revenue":0.081},{"date":"2026-04-03","views":56767,"engaged":4131,"ctr":7.24,"avg_view_pct":10.19,"subscribers":138,"cpm":null,"revenue":0.325},{"date":"2026-04-04","views":21270,"engaged":1669,"ctr":9.98,"avg_view_pct":10.97,"subscribers":41,"cpm":null,"revenue":0.373},{"date":"2026-04-05","views":154956,"engaged":17021,"ctr":8.18,"avg_view_pct":15.22,"subscribers":411,"cpm":null,"revenue":0.0},{"date":"2026-04-06","views":12256,"engaged":1105,"ctr":8.66,"avg_view_pct":12.68,"subscribers":14,"cpm":null,"revenue":0.976},{"date":"2026-04-07","views":111695,"engaged":10464,"ctr":7.21,"avg_view_pct":12.98,"subscribers":232,"cpm":0.35,"revenue":12.71},{"date":"2026-04-08","views":1130,"engaged":101,"ctr":4.69,"avg_view_pct":12.18,"subscribers":2,"cpm":2.17,"revenue":0.805},{"date":"2026-04-09","views":37736,"engaged":3558,"ctr":6.4,"avg_view_pct":13.2,"subscribers":66,"cpm":0.48,"revenue":5.923},{"date":"2026-04-10","views":5022,"engaged":483,"ctr":7.67,"avg_view_pct":13.41,"subscribers":14,"cpm":0.77,"revenue":1.287},{"date":"2026-04-11","views":44915,"engaged":4097,"ctr":7.5,"avg_view_pct":12.68,"subscribers":160,"cpm":2.33,"revenue":34.128},{"date":"2026-04-12","views":12931,"engaged":1112,"ctr":6.79,"avg_view_pct":12.03,"subscribers":66,"cpm":1.52,"revenue":6.407},{"date":"2026-04-14","views":26665,"engaged":5533,"ctr":7.66,"avg_view_pct":29.45,"subscribers":99,"cpm":3.41,"revenue":30.041},{"date":"2026-04-15","views":12918,"engaged":1355,"ctr":10.1,"avg_view_pct":14.64,"subscribers":26,"cpm":2.33,"revenue":9.928},{"date":"2026-04-16","views":4102,"engaged":380,"ctr":7.93,"avg_view_pct":12.68,"subscribers":10,"cpm":3.42,"revenue":4.621},{"date":"2026-04-17","views":1203,"engaged":102,"ctr":7.27,"avg_view_pct":11.78,"subscribers":2,"cpm":2.27,"revenue":0.893},{"date":"2026-04-18","views":23431,"engaged":2876,"ctr":8.62,"avg_view_pct":17.28,"subscribers":49,"cpm":0.31,"revenue":2.364},{"date":"2026-04-19","views":17989,"engaged":2498,"ctr":6.3,"avg_view_pct":18.29,"subscribers":38,"cpm":6.52,"revenue":38.272},{"date":"2026-04-20","views":22143,"engaged":5175,"ctr":9.55,"avg_view_pct":33.09,"subscribers":77,"cpm":3.45,"revenue":25.154},{"date":"2026-04-21","views":5230,"engaged":1017,"ctr":5.42,"avg_view_pct":33.12,"subscribers":11,"cpm":0.66,"revenue":1.138},{"date":"2026-04-22","views":37968,"engaged":6034,"ctr":7.01,"avg_view_pct":41.82,"subscribers":99,"cpm":null,"revenue":0.0}]};
+
+const COLORS = {'LittleDrama':'#378ADD','DramaBitesTV':'#D85A30','Drama Club':'#1D9E75','CEO Love Drama':'#D4537E','Drama Nook':'#7F77DD','Found This Drama':'#BA7517','SceneClip':'#639922'};
+
+const INSIGHTS = {
+  views:['Found This Drama 是矩阵中流量体量最大的账号，单日观看最高突破 138 万次，但近期发片节奏已放缓，数据缺口明显。','Drama Nook 在 3/18 超过 200 万次观看，之后虽回落但仍维持相对稳定的量级，是整体最具规模基本盘的账号。','CEO Love Drama 在 3/30–3/31 双日合计近 160 万次，属典型单片爆发带动型，峰后衰退明显，需持续补充爆款。','DramaBitesTV 在 4/10 出现 60 万次的异常高点，值得追查是否有特定视频被推荐系统带起。','整体矩阵流量高度依赖少数爆款日，建议加强稳定发片节奏以填补各账号的低谷期。'],
+  engaged:['Found This Drama 与 Drama Nook 在互动量上遥遥领先，高互动日均集中在百万流量爆发时段。','CEO Love Drama 在 3/30–3/31 虽有大流量，但 Engaged 占 Views 比例偏低，显示这批观众属浅层浏览，黏性不高。','Drama Club 的互动率相对稳健，高流量日的 Engaged 比例在矩阵中表现较佳，内容与受众吻合度高。','SceneClip 整体互动量偏低，与其 Views 规模不成比例，内容的 CTA（行动呼吁）有明显优化空间。','建议各账号在高流量视频中加强评论引导与互动设计，提升 Engaged 转化率。'],
+  ctr:['Found This Drama 的缩略图点击率在矩阵中最为突出，多次超过 10%，3/14 甚至达 24.4%，缩略图与标题策略具明显参考价值。','CEO Love Drama 在早期（3/24–3/25）CTR 仅约 1–2%，疑似当时缩略图或标题未经优化，建议比对前后版本差异。','DramaBitesTV 在 4/11 出现 13.2% 的高点，与同期流量爆发直接相关，印证 CTR 对算法分发的关键作用。','整体矩阵的 CTR 中位数落在 6–8% 之间，各账号波动较大，缩略图 A/B 测试应列为常规操作。'],
+  avg_view_pct:['CEO Love Drama 完播率数据异常偏高（部分日期超过 50%，甚至 76%），高度怀疑有投放 Shorts 或极短片，数据需拆分内容类型后再判读。','SceneClip 同样出现多次超过 40%、甚至 124% 的离群值，与上述情况相同，应确认是否有 Shorts 混入计算。','排除两个账号的异常值后，其余账号完播率多落在 10–25% 之间，Drama Club 表现最为稳定。','建议将 Shorts 与长视频数据分开追踪，避免完播率指标失真，影响内容策略判断。'],
+  subscribers:['Found This Drama 与 Drama Nook 在订阅增长上远超其他账号，爆款发布日可出现 2,000–5,000 人的单日涨幅。','CEO Love Drama 在 3/30–3/31 合计新增逾 3,000 订阅，但之后几乎归零，增长完全依赖爆款驱动，缺乏稳定基本盘。','DramaBitesTV 在 4/10 单日新增 2,227 订阅，为账号史上最高记录，需确认该日是否有特定视频被算法大量推荐。','LittleDrama 与 Drama Club 的订阅增长量偏小，建议在高流量视频片尾加强订阅引导，提升转化率。'],
+  cpm:['LittleDrama 的 CPM 在后期（4/9 起）明显上升，多次超过 $5，显示广告主对其受众群出价较积极，可能与内容题材或受众年龄层有关。','DramaBitesTV 的 CPM 表现最稳定且偏高，4/12 达 $7.76，是矩阵中单日最高值，结合 Revenue 表现，目前货币化效率最佳。','Drama Nook 与 Found This Drama 的 CPM 普遍偏低（多在 $1–$2 之间），尽管流量庞大但单位收益不高，建议测试不同内容题材吸引高出价广告类别。','CEO Love Drama 后期 CPM 数据缺口多，疑似未达 YouTube 货币化门槛的视频比例偏高，需检视视频资格状态。'],
+  revenue:['Found This Drama 是矩阵收入最高账号，3/20 单日收入达 $874，为整个矩阵最高记录，累计收入远超其他账号。','Drama Nook 以稳定高流量支撑排名第二，但 CPM 偏低限制收益上限，若能提升 CPM 区间，收入潜力仍有成长空间。','DramaBitesTV 近期收入成长最为明显，4 月上旬后多次出现 $100+ 单日收入，是矩阵中当前货币化动能最强的账号。','LittleDrama、Drama Club 与 SceneClip 累计收入相对偏低，主因是流量规模与 CPM 双低，建议优先提升爆款率以带动收益。']
+};
+
+const METRIC_ORDER = [
+  {key:'views',        label:'每日观看数 (Views)',  avgOnly:false, fmt:v=>v>=1e6?(v/1e6).toFixed(1)+'M':v>=1e3?(v/1e3).toFixed(0)+'K':Math.round(v)},
+  {key:'engaged',      label:'互动数 (Engaged)',    avgOnly:true,  fmt:v=>v>=1e6?(v/1e6).toFixed(1)+'M':v>=1e3?(v/1e3).toFixed(0)+'K':Math.round(v)},
+  {key:'ctr',          label:'缩略图点击率',        avgOnly:true,  fmt:v=>v.toFixed(1)+'%'},
+  {key:'avg_view_pct', label:'完播率',              avgOnly:true,  fmt:v=>v.toFixed(1)+'%'},
+  {key:'subscribers',  label:'新增订阅',            avgOnly:false, fmt:v=>Math.round(v).toLocaleString()},
+  {key:'cpm',          label:'CPM',                avgOnly:true,  fmt:v=>'$'+v.toFixed(2)},
+  {key:'revenue',      label:'收入 Revenue (USD)',  avgOnly:false, fmt:v=>'$'+v.toFixed(1), gold:true},
+];
+
+const accounts = Object.keys(RAW);
+let currentMetric = 'views';
+let hidden = new Set();
+
+function getAllDates() {
+  const s = new Set();
+  accounts.forEach(a => RAW[a].forEach(d => s.add(d.date)));
+  return [...s].sort();
+}
+const ALL_DATES = getAllDates();
+function getMetric(key) { return METRIC_ORDER.find(m => m.key === key); }
+
+function buildDatasets(key) {
+  return accounts.map(a => {
+    const map = {};
+    RAW[a].forEach(d => { if (d[key] != null) map[d.date] = d[key]; });
+    return {
+      label: a,
+      data: ALL_DATES.map(d => map[d] != null ? map[d] : 0),
+      borderColor: COLORS[a], backgroundColor: COLORS[a]+'18',
+      borderWidth: 2, pointRadius: 2.5, pointHoverRadius: 5,
+      tension: 0, spanGaps: true, hidden: hidden.has(a)
+    };
+  });
+}
+
+function buildTabs() {
+  const el = document.getElementById('tabs');
+  el.innerHTML = '';
+  METRIC_ORDER.forEach(m => {
+    const btn = document.createElement('button');
+    const isActive = m.key === currentMetric;
+    btn.className = isActive ? (m.gold ? 'tab active-gold' : 'tab active') : 'tab';
+    btn.dataset.metric = m.key;
+    btn.textContent = m.label;
+    el.appendChild(btn);
+  });
+}
+
+function buildLegend() {
+  const el = document.getElementById('legend');
+  el.innerHTML = '';
+  accounts.forEach(a => {
+    const c = COLORS[a];
+    const item = document.createElement('div');
+    item.className = 'leg-item'+(hidden.has(a)?' muted':'');
+    item.style.cssText = `background:${c}20;border-color:${c};color:${c};`;
+    item.textContent = a;
+    item.onclick = () => { if(hidden.has(a)) hidden.delete(a); else hidden.add(a); updateChart(); };
+    el.appendChild(item);
+  });
+}
+
+function buildSummaries(key) {
+  const m = getMetric(key);
+  const el = document.getElementById('summaries');
+  el.innerHTML = '';
+
+  if (key === 'revenue') {
+    let grandTotal = 0;
+    const grandDays = new Set();
+    accounts.forEach(a => RAW[a].forEach(d => {
+      if (d[key] != null && d[key] > 0) { grandTotal += d[key]; grandDays.add(d.date); }
+    }));
+    const grandAvg = grandTotal / grandDays.size;
+    const card = document.createElement('div');
+    card.className = 'summary-card gold-card';
+    card.innerHTML = `<div class="acct gold-acct">🏆 全部频道合计</div>
+      <div class="row"><span class="slabel gold-slabel">总收入</span><span class="sval gold-sval">$${grandTotal.toFixed(1)}</span></div>
+      <div class="row"><span class="slabel gold-slabel">日均</span><span class="sval gold-sval">$${grandAvg.toFixed(1)}</span></div>`;
+    el.appendChild(card);
+  }
+
+  accounts.filter(a => !hidden.has(a)).forEach(a => {
+    const vals = RAW[a].map(d => d[key]).filter(v => v != null && v > 0);
+    if (!vals.length) return;
+    const total = vals.reduce((s,v)=>s+v,0);
+    const avg = total / vals.length;
+    const c = COLORS[a];
+    const card = document.createElement('div');
+    card.className = 'summary-card';
+    if (m.avgOnly) {
+      card.innerHTML = `<div class="acct" style="color:${c}">${a}</div>
+        <div class="row"><span class="slabel">日均</span><span class="sval">${m.fmt(avg)}</span></div>`;
+    } else {
+      card.innerHTML = `<div class="acct" style="color:${c}">${a}</div>
+        <div class="row"><span class="slabel">累计</span><span class="sval">${m.fmt(total)}</span></div>
+        <div class="row"><span class="slabel">日均</span><span class="sval">${m.fmt(avg)}</span></div>`;
+    }
+    el.appendChild(card);
+  });
+}
+
+function buildInsight(key) {
+  const list = document.getElementById('insightList');
+  list.innerHTML = '';
+  (INSIGHTS[key] || []).forEach(text => {
+    const li = document.createElement('li');
+    li.textContent = text;
+    list.appendChild(li);
+  });
+}
+
+const ctx = document.getElementById('mainChart').getContext('2d');
+const chart = new Chart(ctx, {
+  type: 'line',
+  data: {labels: ALL_DATES, datasets: buildDatasets('views')},
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    interaction: {mode:'index', intersect:false},
+    plugins: {
+      legend: {display:false},
+      tooltip: {callbacks: {
+        label: ctx => ` ${ctx.dataset.label}: ${getMetric(currentMetric).fmt(ctx.parsed.y)}`,
+        title: items => items[0]?.label||''
+      }}
+    },
+    scales: {
+      x: {ticks:{maxTicksLimit:12,maxRotation:35,font:{size:11},color:'#888'},grid:{display:false}},
+      y: {ticks:{font:{size:11},color:'#888',callback:v=>getMetric(currentMetric).fmt(v)},grid:{color:'rgba(128,128,128,0.1)'}}
+    }
+  }
+});
+
+function updateChart() {
+  chart.data.datasets = buildDatasets(currentMetric);
+  chart.update();
+  buildTabs();
+  buildLegend();
+  buildSummaries(currentMetric);
+  buildInsight(currentMetric);
+}
+
+document.getElementById('tabs').addEventListener('click', e => {
+  const btn = e.target.closest('.tab');
+  if (!btn) return;
+  currentMetric = btn.dataset.metric;
+  updateChart();
+});
+
+buildTabs();
+buildLegend();
+buildSummaries('views');
+buildInsight('views');
+</script>
+</body>
+</html>
