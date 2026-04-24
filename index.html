@@ -60,19 +60,19 @@ const RAW = {"LittleDrama":[{"date":"2026-03-25","views":10023,"engaged":1834,"c
 const COLORS = {'LittleDrama':'#378ADD','DramaBitesTV':'#D85A30','Drama Club':'#1D9E75','CEO Love Drama':'#D4537E','Drama Nook':'#7F77DD','Found This Drama':'#BA7517','SceneClip':'#639922'};
 
 const INSIGHTS = {
-  views:['Found This Drama 是矩阵中流量体量最大的账号，单日观看最高突破 138 万次，但近期发片节奏已放缓，数据缺口明显。','Drama Nook 在 3/18 超过 200 万次观看，之后虽回落但仍维持相对稳定的量级，是整体最具规模基本盘的账号。','CEO Love Drama 在 3/30–3/31 双日合计近 160 万次，属典型单片爆发带动型，峰后衰退明显，需持续补充爆款。','DramaBitesTV 在 4/10 出现 60 万次的异常高点，值得追查是否有特定视频被推荐系统带起。','整体矩阵流量高度依赖少数爆款日，建议加强稳定发片节奏以填补各账号的低谷期。'],
-  engaged:['Found This Drama 与 Drama Nook 在互动量上遥遥领先，高互动日均集中在百万流量爆发时段。','CEO Love Drama 在 3/30–3/31 虽有大流量，但 Engaged 占 Views 比例偏低，显示这批观众属浅层浏览，黏性不高。','Drama Club 的互动率相对稳健，高流量日的 Engaged 比例在矩阵中表现较佳，内容与受众吻合度高。','SceneClip 整体互动量偏低，与其 Views 规模不成比例，内容的 CTA（行动呼吁）有明显优化空间。','建议各账号在高流量视频中加强评论引导与互动设计，提升 Engaged 转化率。'],
-  ctr:['Found This Drama 的缩略图点击率在矩阵中最为突出，多次超过 10%，3/14 甚至达 24.4%，缩略图与标题策略具明显参考价值。','CEO Love Drama 在早期（3/24–3/25）CTR 仅约 1–2%，疑似当时缩略图或标题未经优化，建议比对前后版本差异。','DramaBitesTV 在 4/11 出现 13.2% 的高点，与同期流量爆发直接相关，印证 CTR 对算法分发的关键作用。','整体矩阵的 CTR 中位数落在 6–8% 之间，各账号波动较大，缩略图 A/B 测试应列为常规操作。'],
-  avg_view_pct:['CEO Love Drama 完播率数据异常偏高（部分日期超过 50%，甚至 76%），高度怀疑有投放 Shorts 或极短片，数据需拆分内容类型后再判读。','SceneClip 同样出现多次超过 40%、甚至 124% 的离群值，与上述情况相同，应确认是否有 Shorts 混入计算。','排除两个账号的异常值后，其余账号完播率多落在 10–25% 之间，Drama Club 表现最为稳定。','建议将 Shorts 与长视频数据分开追踪，避免完播率指标失真，影响内容策略判断。'],
+  views:['Found This Drama 是矩阵中流量体量最大的账号，单日观看最高突破 138 万次，但近期发片节奏放缓。','Drama Nook 在 3/18 超过 200 万次观看，之后虽回落但仍维持相对稳定的量级，是整体最具规模基本盘的账号。','CEO Love Drama 在 3/30–3/31 双日合计近 160 万次，属典型单片爆发带动型，峰后衰退明显，需持续补充爆款。','DramaBitesTV 在 4/10 出现 60 万次的异常高点，值得追查是否有特定视频被推荐系统带起。','整体矩阵流量高度依赖少数爆款日，建议加强稳定发片节奏以填补各账号的低谷期。'],
+  engaged:['Found This Drama 与 Drama Nook 在互动量上遥遥领先，高互动日均集中在百万流量爆发时段。','CEO Love Drama 在 3/30–3/31 虽有大流量，但 Engaged 占 Views 比例偏低，显示这批观众属浅层浏览，黏性不高。','Drama Club 的互动率相对稳健，高流量日的 Engaged 比例在矩阵中表现较佳，内容与受众吻合度高。','SceneClip 整体互动量偏低，与其 Views 规模不成比例，内容的 CTA有明显优化空间。','建议各账号在高流量视频中加强评论引导与互动设计，提升 Engaged 转化率。'],
+  ctr:['Found This Drama 的缩图点击率在矩阵中最为突出，多次超过 10%，3/14 甚至达 24.4%，缩略图与标题策略具明显参考价值。','CEO Love Drama 在早期（3/24–3/25）CTR 仅约 1–2%，疑似当时缩略图或标题未经优化，建议比对前后版本差异。','DramaBitesTV 在 4/11 出现 13.2% 的高点，与同期流量爆发直接相关，印证 CTR 对算法分发的关键作用。','整体矩阵的 CTR 中位数落在 6–8% 之间，各账号波动较大，缩略图 A/B 测试应列为常规操作。'],
+  avg_view_pct:['CEO Love Drama 完播率数据异常偏高（部分日期超过 50%，甚至 76%），是否有投放Shorts吸流量？数据需拆分内容类型后再判读。','SceneClip 同样出现多次超过 40%、甚至 124% 的离群值，与上述情况相同，应确认是否有 Shorts 混入计算。','排除两个账号的异常值后，其余账号完播率多落在 10–25% 之间，Drama Club 表现最为稳定。','建议将 Shorts 与长视频数据分开追踪。'],
   subscribers:['Found This Drama 与 Drama Nook 在订阅增长上远超其他账号，爆款发布日可出现 2,000–5,000 人的单日涨幅。','CEO Love Drama 在 3/30–3/31 合计新增逾 3,000 订阅，但之后几乎归零，增长完全依赖爆款驱动，缺乏稳定基本盘。','DramaBitesTV 在 4/10 单日新增 2,227 订阅，为账号史上最高记录，需确认该日是否有特定视频被算法大量推荐。','LittleDrama 与 Drama Club 的订阅增长量偏小，建议在高流量视频片尾加强订阅引导，提升转化率。'],
   cpm:['LittleDrama 的 CPM 在后期（4/9 起）明显上升，多次超过 $5，显示广告主对其受众群出价较积极，可能与内容题材或受众年龄层有关。','DramaBitesTV 的 CPM 表现最稳定且偏高，4/12 达 $7.76，是矩阵中单日最高值，结合 Revenue 表现，目前货币化效率最佳。','Drama Nook 与 Found This Drama 的 CPM 普遍偏低（多在 $1–$2 之间），尽管流量庞大但单位收益不高，建议测试不同内容题材吸引高出价广告类别。','CEO Love Drama 后期 CPM 数据缺口多，疑似未达 YouTube 货币化门槛的视频比例偏高，需检视视频资格状态。'],
-  revenue:['Found This Drama 是矩阵收入最高账号，3/20 单日收入达 $874，为整个矩阵最高记录，累计收入远超其他账号。','Drama Nook 以稳定高流量支撑排名第二，但 CPM 偏低限制收益上限，若能提升 CPM 区间，收入潜力仍有成长空间。','DramaBitesTV 近期收入成长最为明显，4 月上旬后多次出现 $100+ 单日收入，是矩阵中当前货币化动能最强的账号。','LittleDrama、Drama Club 与 SceneClip 累计收入相对偏低，主因是流量规模与 CPM 双低，建议优先提升爆款率以带动收益。']
+  revenue:['Found This Drama 是矩阵收入最高账号，3/20 单日收入达 $874，为整个矩阵最高记录，累计收入远超其他账号。','Drama Nook 以稳定高流量支撑排名第二，但 CPM 偏低限制收益上限，若能提升 CPM 区间，收入潜力仍有成长空间。','DramaBitesTV 近期收入成长最为明显，4 月上旬后多次出现 $100+ 单日收入，是矩阵中近期货币化动能最强的账号。','LittleDrama、Drama Club 与 SceneClip 累计收入相对偏低，主因是流量规模与 CPM 双低，建议优先提升爆款率以带动收益。']
 };
 
 const METRIC_ORDER = [
-  {key:'views',        label:'每日观看数 (Views)',  avgOnly:false, fmt:v=>v>=1e6?(v/1e6).toFixed(1)+'M':v>=1e3?(v/1e3).toFixed(0)+'K':Math.round(v)},
+  {key:'views',        label:'观看数 (Views)',  avgOnly:false, fmt:v=>v>=1e6?(v/1e6).toFixed(1)+'M':v>=1e3?(v/1e3).toFixed(0)+'K':Math.round(v)},
   {key:'engaged',      label:'互动数 (Engaged)',    avgOnly:true,  fmt:v=>v>=1e6?(v/1e6).toFixed(1)+'M':v>=1e3?(v/1e3).toFixed(0)+'K':Math.round(v)},
-  {key:'ctr',          label:'缩略图点击率',        avgOnly:true,  fmt:v=>v.toFixed(1)+'%'},
+  {key:'ctr',          label:'缩图点击率',        avgOnly:true,  fmt:v=>v.toFixed(1)+'%'},
   {key:'avg_view_pct', label:'完播率',              avgOnly:true,  fmt:v=>v.toFixed(1)+'%'},
   {key:'subscribers',  label:'新增订阅',            avgOnly:false, fmt:v=>Math.round(v).toLocaleString()},
   {key:'cpm',          label:'CPM',                avgOnly:true,  fmt:v=>'$'+v.toFixed(2)},
